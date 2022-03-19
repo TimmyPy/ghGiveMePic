@@ -1,0 +1,19 @@
+{
+  "name": "Give Me Pic",
+  "description": "Give me pic",
+  "version": "1.0",
+  "manifest_version": 3,
+  "background": {
+    "service_worker": "index.js"
+  },
+  "permissions": ["contextMenus", "downloads","tabs"],
+  "action": {
+    "default_icon": {
+      "16": "/static/icon.png",
+      "128": "/static/icon.png"
+    }
+  },
+  "icons": {
+    "128": "/static/icon.png"
+  }
+}
