@@ -1,28 +1,4 @@
-function download_pict(image_url) {
-    try {
-        chrome.downloads.download({
-            url: image_url,
-            saveAs: true,
-            filename: 'why_are_u_geh'
-        }, (dId) => console.log(dId, chrome.runtime.lastError));
-    } catch (e) {
-        console.error(`Contact developer. Error occurred: ${e}`);
-    }
-}
-function save_to_buffer(item_info, tab){
-    console.log(item_info, tab);
-}
-
-async function open_new_tab(image_url) {
-    try {
-        await chrome.tabs.create({
-            active: false,
-            url: image_url
-        });
-    } catch (e) {
-       console.error(`Contact developer. Error occurred: ${e}`);
-    }
-}
+// Initialize block
 function init_context_menu() {
     chrome.contextMenus.create({
         title: 'Give me pic',
@@ -30,7 +6,7 @@ function init_context_menu() {
         contexts: ['image']
     });
     chrome.contextMenus.create({
-        title: 'Buffer',
+        title: 'Buffer (not working yet)',
         id: 'gmp_buffer',
         contexts: ['image'],
         parentId: 'gmp_base'
@@ -49,32 +25,55 @@ function init_context_menu() {
     });
 }
 
+// Main functions
+function download_pict(image_url) {
+    try {
+        chrome.downloads.download({
+            url: image_url,
+            conflictAction: 'uniquify'
+        }).then(
+            (dId) => {
+                console.log(`Download started successfully: ${dId}`);
+            },
+            (error) => {
+                console.error(`Download failed: ${error}`);
+            });
+    } catch (e) {
+        console.error(`Contact developer. Error occurred: ${e}`);
+    }
+}
+
+function open_new_tab(image_url) {
+    try {
+        chrome.tabs.create({
+            active: false,
+            url: image_url
+        }).then(
+            (resolve) => {
+                console.log(`New tab opened successfully`);
+            },
+            (error) => {
+                console.error(`New tab opening finished with error: ${error}`);
+            }
+        );
+    } catch (e) {
+       console.error(`Contact developer. Error occurred: ${e}`);
+    }
+}
+
+// Chrome events
 chrome.runtime.onInstalled.addListener(() => {
     init_context_menu();
-    console.log('initialized');
 });
 
 chrome.contextMenus.onClicked.addListener((el) => {
-   console.log(el.menuItemId, el.mediaType, el.srcUrl);
    if (el.menuItemId === 'gmp_buffer') {
-       console.log('save to buffer');
+       console.log('buffer do not work');
    } else if (el.menuItemId === 'gmp_download') {
        download_pict(el.srcUrl);
    } else if (el.menuItemId === 'gmp_open_new_tab') {
-       open_new_tab(el.srcUrl)
-           .then(
-               (resolve) => {},
-               (reject) => {}
-           );
+       open_new_tab(el.srcUrl);
    } else {
        console.log('some shit happens');
    }
 });
-
-chrome.downloads.onChanged.addListener((delta) => {
-    console.log(delta)
-    if (!delta.state || (delta.state.current != 'complete')) {
-        return;
-    }
-    chrome.downloads.open(delta.id);
-})

@@ -6,7 +6,7 @@
   "background": {
     "service_worker": "index.js"
   },
-  "permissions": ["contextMenus", "downloads","tabs"],
+  "permissions": ["contextMenus", "downloads", "tabs"],
   "action": {
     "default_icon": {
       "16": "/static/icon.png",
