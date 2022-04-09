@@ -1,35 +1,67 @@
 // Initialize block
-function init_context_menu() {
+function initContextMenus() {
     chrome.contextMenus.create({
         title: 'Give me pic',
-        id: 'gmp_base',
+        id: 'gmpBase',
         contexts: ['image']
     });
     chrome.contextMenus.create({
-        title: 'Buffer (not working yet)',
-        id: 'gmp_buffer',
+        title: 'Buffer',
+        id: 'gmpBuffer',
         contexts: ['image'],
-        parentId: 'gmp_base'
+        parentId: 'gmpBase'
     });
     chrome.contextMenus.create({
         title: 'Download',
-        id: 'gmp_download',
+        id: 'gmpDownload',
         contexts: ['image'],
-        parentId: 'gmp_base'
+        parentId: 'gmpBase'
     });
     chrome.contextMenus.create({
         title: 'Open new tab',
-        id: 'gmp_open_new_tab',
+        id: 'gmpOpenNewTab',
         contexts: ['image'],
-        parentId: 'gmp_base'
+        parentId: 'gmpBase'
     });
 }
 
+
+// Utils
+async function copyScript(imageUrl) {
+    console.log(`Scripting: ${imageUrl}`);
+    try {
+        const imgResp = await fetch(imageUrl, {mode: "no-cors"});
+        let blob = await imgResp.blob();
+        blob = blob.slice(0, blob.size, 'image/png');
+    	navigator.clipboard.write(
+            [new ClipboardItem({[blob.type]: blob})]
+        )
+	    .then(
+	    	(result) => console.log('The image was coppied to clipboard successfuly')
+	    );
+    } catch(e) {
+	    console.error(`copyScript Error: ${e}`);
+    }
+}
+
+
 // Main functions
-function download_pict(image_url) {
+async function copyToClipboard(imageUrl){
+    let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        function: copyScript,
+	    args: [imageUrl]
+    }, (injectionResults) => {
+        for (const frameResult of injectionResults)
+            console.log('Frame Title: ' + frameResult.result);
+    });
+}
+
+function downloadPict(imageUrl) {
     try {
         chrome.downloads.download({
-            url: image_url,
+            url: imageUrl,
             conflictAction: 'uniquify'
         }).then(
             (dId) => {
@@ -43,11 +75,11 @@ function download_pict(image_url) {
     }
 }
 
-function open_new_tab(image_url) {
+function openNewTab(imageUrl) {
     try {
         chrome.tabs.create({
             active: false,
-            url: image_url
+            url: imageUrl
         }).then(
             (resolve) => {
                 console.log(`New tab opened successfully`);
@@ -63,17 +95,17 @@ function open_new_tab(image_url) {
 
 // Chrome events
 chrome.runtime.onInstalled.addListener(() => {
-    init_context_menu();
+    initContextMenus();
 });
 
 chrome.contextMenus.onClicked.addListener((el) => {
-   if (el.menuItemId === 'gmp_buffer') {
-       console.log('buffer do not work');
-   } else if (el.menuItemId === 'gmp_download') {
-       download_pict(el.srcUrl);
-   } else if (el.menuItemId === 'gmp_open_new_tab') {
-       open_new_tab(el.srcUrl);
-   } else {
-       console.log('some shit happens');
-   }
+    if (el.menuItemId === 'gmpBuffer') {
+       copyToClipboard(el.srcUrl);
+    } else if (el.menuItemId === 'gmpDownload') {
+       downloadPict(el.srcUrl);
+    } else if (el.menuItemId === 'gmpOpenNewTab') {
+       openNewTab(el.srcUrl);
+    } else {
+       console.error(`Something bad happens: ${el}`);
+    }
 });
